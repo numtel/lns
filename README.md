@@ -1,5 +1,7 @@
 # Late Night Sketches
 
+[Old site on Wayback Machine](https://web.archive.org/web/20250207082901/http://latenightsketches.com/)
+
 ## Running locally
 
 Requires Node.js installed
