@@ -1,0 +1,69 @@
+
+@font-face {
+  font-family: "LeagueScript";
+  src: url(fonts/LeagueScript-Regular.ttf);
+}
+body{
+  margin:0;
+  padding:0;
+  color:#eee;
+  background:#000;
+  font-family: serif;
+}
+h1 {
+  font-family: LeagueScript;
+  font-size: 4rem;
+  margin: 0;
+  font-weight: 400;
+  line-height: 3.5rem;
+  padding: 1rem 0 0 0;
+}
+
+a {
+  color: #eee;
+}
+
+main {
+  max-width: 720px;
+}
+p.tag {
+  margin: 0 4rem;
+  color:#999;
+}
+p.index {
+  margin: 4rem;
+}
+p.tag a, p.index a {
+  color:#999;
+}
+blockquote {
+  color:#666;
+  padding: 4rem 1rem;
+}
+
+ul.index {
+  list-style:none;
+  border-top: 1px solid #555;
+  padding: 0rem;
+}
+ul.index>li {
+  padding: 0.5rem 2rem;
+  border-bottom: 1px solid #555;
+  display: flex;
+  justify-content: space-between;
+  flex-direction: row-reverse;
+}
+#scene {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+}
+
+article {
+  white-space: pre-wrap;
+  padding: 2rem 1rem;
+  line-height: 120%;
+}

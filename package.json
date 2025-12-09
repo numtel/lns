@@ -1,0 +1,15 @@
+{
+  "name": "lns-website",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node tools/build.js",
+    "serve": "npx http-server dist -p 8000 -c-1",
+    "dev": "npm run build && npm run serve"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
+
