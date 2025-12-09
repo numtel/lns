@@ -45,6 +45,18 @@ float hash21(vec2 p) {
   p += dot(p, p + 34.345);
   return fract(p.x * p.y);
 }
+// --- extra hash helpers for shooting star timing/direction ---
+float hash11(float p) {
+  return fract(sin(p * 127.1) * 43758.5453123);
+}
+
+vec2 hash21f(float p) {
+  vec2 q = vec2(
+    dot(vec2(p, p + 1.23), vec2(127.1, 311.7)),
+    dot(vec2(p + 4.56, p + 7.89), vec2(269.5, 183.3))
+  );
+  return fract(sin(q) * 43758.5453);
+}
 
 // single star layer
 //  - scale : density
@@ -78,6 +90,93 @@ float starLayer(vec2 uv, float scale, float time, vec2 motion, float depth, floa
 
   return base * twinkle * starMask * intensity;
 }
+
+// Tiny moving point + continuous line tail that lingers and fades out
+float shootingStar(vec2 uv, float time) {
+    // --- Randomized period per cycle (3–6 seconds) ---
+    float baseCycle  = 3.;
+    float cycleIndex = floor(time / baseCycle);
+
+    float r0     = hash11(cycleIndex);
+    float period = mix(3.0, 6.0, r0);          // [3, 6] seconds
+
+    float phase = fract(time / period);        // 0..1 within this cycle
+
+    // Small initial gap with no star
+    if (phase < 0.1) {
+        return 0.0;
+    }
+
+    // Map remaining 0.1..1.0 to 0..1 "life" of the star
+    float life = (phase - 0.1) / 0.9;          // 0..1
+
+    // Head moves only in the first ~80% of life
+    float movePhase = clamp(life / 0.8, 0.0, 1.0);
+
+    // Tail fade-out in the last 20% of life
+    float tailFadePhase = clamp((life - 0.8) / 0.2, 0.0, 1.0);
+
+    // --- Random direction (full circle) ---
+    float angle = hash11(cycleIndex + 1.0) * 6.28318530718; // 0..2π
+    vec2 dir = normalize(vec2(cos(angle), sin(angle)));
+
+    // --- Random center point (slightly padded around the screen) ---
+    float cx = mix(-0.2, 1.2, hash11(cycleIndex + 2.0));
+    float cy = mix(-0.2, 1.2, hash11(cycleIndex + 3.0));
+    vec2 center = vec2(cx, cy);
+
+    // Path length large enough to cross the view
+    float pathLen = 1.8;
+    float s = (movePhase - 0.5) * pathLen;
+
+    // Head position moves along dir
+    vec2 headPos = center + dir * s;
+
+    // --- Head: small bright core ---
+    float coreRadius = mix(0.006, 0.002, hash11(cycleIndex + 2.0));
+    float distHead = length(uv - headPos);
+    float headBrightBase = smoothstep(coreRadius, 0.0, distHead) * 2.0;
+
+    // --- Tail: continuous glowing line behind head along -dir ---
+    float tailLen = mix(0.45, 0.2, hash11(cycleIndex + 2.0));              // how long the tail is
+    vec2 toUV = uv - headPos;
+
+    // Distance along the tail direction (-dir)
+    float along = dot(toUV, -dir);
+
+    // Only consider points behind the head and within tail length
+    float withinTail = step(0.0, along) * step(along, tailLen);
+
+    // Perpendicular distance to the line
+    vec2 proj = -dir * along;
+    float distLine = length(toUV - proj);
+
+    // Radial falloff from the line
+    float tailWidth = mix(0.006, 0.002, hash11(cycleIndex + 2.0));
+    float lineCore = smoothstep(tailWidth, 0.0, distLine);
+
+    // Fade brightness along the line from head (bright) to end (dim)
+    float alongNorm = clamp(along / tailLen, 0.0, 1.0);
+    float alongFalloff = 1.0 - alongNorm;
+
+    float tailBrightBase = lineCore * alongFalloff * withinTail;
+
+    // --- Temporal behavior: fade in + lingering tail fade out ---
+
+    // Soft fade-in at start of life (for both head & tail)
+    float fadeIn = smoothstep(0.0, 0.08, life);
+
+    // Head fades out quickly near the end
+    float headMask = 1.0 - clamp(tailFadePhase * 3.0, 0.0, 1.0);  // vanishes fast
+    // Tail fades out more slowly over the entire last 20% of life
+    float tailMask = 1.0 - tailFadePhase;                         // lingers
+
+    float headBright = headBrightBase * fadeIn * headMask;
+    float tailBright = tailBrightBase * fadeIn * tailMask;
+
+    return headBright + tailBright * 0.5;
+}
+
 
 void main() {
   // uv in [0,1], centered coords for parallax
@@ -138,10 +237,15 @@ void main() {
   stars *= 0.7 + 0.3 * (viewTilt * 0.5 + 0.5);  // keep in a nice range
   stars = clamp(stars, 0.0, 1.0);
 
-  // black background + white stars
-  vec3 color = vec3(stars);
+  // add a shooting star every ~3–6 seconds
+  float shoot = shootingStar(uv, u_time);
 
+  // black background + white stars + bright shooting star
+  vec3 color = vec3(stars + shoot);
+
+  color = clamp(color, 0.0, 1.0);
   fragColor = vec4(color, 1.0);
+
 }
 `;
 
