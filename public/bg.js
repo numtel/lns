@@ -336,20 +336,49 @@ void main() {
   // Device orientation (mobile / tablet)
   if (window.DeviceOrientationEvent) {
     window.addEventListener('deviceorientation', (event) => {
-      // event.beta  : [-180, 180] front/back (pitch)
-      // event.gamma : [-90,  90]  left/right (roll)
-      // event.alpha : [0,    360] compass (yaw)
-      const beta  = (event.beta-90  || 0) * Math.PI / 180.0;
-      const gamma = (event.gamma || 0) * Math.PI / 180.0;
-      const alpha = (event.alpha || 0) * Math.PI / 180.0;
+      // 1. Get raw angles in degrees (no Math.abs!)
+      const beta  = (event.beta  || 0); // x-axis tilt (front/back)
+      const gamma = (event.gamma || 0); // y-axis tilt (left/right)
+      const alpha = (event.alpha || 0); // compass direction
 
-      const roll  = Math.sin(gamma);
-      const pitch = Math.sin(beta);
-      const yaw   = Math.sin(alpha);
+      // 2. Handle Screen Rotation (Portrait vs Landscape)
+      // We need to swap Beta/Gamma based on how the user is holding the screen.
+      const screenAngle = (screen.orientation && screen.orientation.angle) || window.orientation || 0;
 
-      orientation[0] = roll;
-      orientation[1] = pitch;
-      orientation[2] = yaw;
+      let screenX = 0;
+      let screenY = 0;
+      const rad = Math.PI / 180.0;
+
+      // Map device hardware axes to screen visual axes
+      if (screenAngle === 90) {
+        // Landscape Left
+        screenX = beta * rad;
+        screenY = -gamma * rad;
+      } else if (screenAngle === -90 || screenAngle === 270) {
+        // Landscape Right
+        screenX = -beta * rad;
+        screenY = gamma * rad;
+      } else if (screenAngle === 180) {
+        // Upside Down
+        screenX = -gamma * rad;
+        screenY = -beta * rad;
+      } else {
+        // Portrait (0)
+        screenX = gamma * rad;
+        screenY = beta * rad;
+      }
+
+      // 3. Update uniforms
+      // We removed Math.abs to fix the "jumping" at axis crossings.
+      // We use the re-mapped screenX/Y to fix the "side view" issue.
+
+      orientation[0] = screenX; // Roll (visual X)
+      orientation[1] = screenY; // Pitch (visual Y)
+
+      // We dampen or remove Yaw (alpha) because it causes huge jumps
+      // when passing North (360->0) and usually feels bad in parallax.
+      // Set to 0 or use a very small factor if you really want twist.
+      orientation[2] = 0;
 
       hasDeviceOrientation = true;
     }, true);
