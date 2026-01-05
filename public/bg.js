@@ -161,7 +161,7 @@ void main() {
     // Combine orientation motion with idle wind
     // (depth * wind) makes closer stars drift faster than far ones -> 3D effect
     vec2 combinedMotion = motionBase * (0.35 + 0.45 * layer)
-                        + wind * (1.5 - t)
+                        /*+ wind * (1.5 - t)*/
                         + vec2(twist * (0.18 + 0.12 * layer), 0.0);
 
     vec2 layerUV = uvSt + p * parallax;
