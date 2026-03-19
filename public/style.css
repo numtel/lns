@@ -51,7 +51,9 @@ ul.index>li {
   border-bottom: 1px solid #555;
   display: flex;
   justify-content: space-between;
+  align-items: center;
   flex-direction: row-reverse;
+  position: relative;
 }
 #scene {
   position: fixed;
@@ -66,4 +68,20 @@ article {
   white-space: pre-wrap;
   padding: 2rem 1rem;
   line-height: 120%;
+}
+
+.nonfic {
+  background: #111;
+  border: 1px solid #222;
+  color: #888;
+  font-size: 80%;
+  padding: 2px;
+  border-radius: 5px;
+  margin: 0.1rem;
+  text-decoration: none;
+  text-transform: lowercase;
+  display: inline-block;
+}
+.date {
+  white-space: nowrap;
 }
